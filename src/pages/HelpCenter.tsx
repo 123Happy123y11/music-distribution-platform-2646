@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { Search, Music, DollarSign, Settings, Users, HelpCircle, BookOpen, MessageSquare, ArrowLeft, ExternalLink } from "lucide-react";
 
 const HelpCenter = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedArticles, setExpandedArticles] = useState<string[]>([]);
+  const { toast } = useToast();
 
   const toggleArticle = (article: string) => {
     setExpandedArticles(prev => 
@@ -117,6 +119,97 @@ const HelpCenter = () => {
     "Managing multiple artist profiles"
   ];
 
+  // Articles organized by category
+  const articlesByCategory: Record<string, Array<{title: string, content: string, readTime: string}>> = {
+    "Getting Started": [
+      {
+        title: "Welcome to SoundWave - Your First Steps",
+        content: "Learn how to set up your account, upload your first track, and navigate the platform. This comprehensive guide covers everything you need to know to get started with music distribution.",
+        readTime: "5 min read"
+      },
+      {
+        title: "Setting Up Your Artist Profile",
+        content: "Create a compelling artist profile that represents your brand. Learn how to add your bio, photos, social links, and contact information to attract fans and industry professionals.",
+        readTime: "3 min read"
+      },
+      {
+        title: "Understanding Music Distribution Basics",
+        content: "Get familiar with how music distribution works, which platforms you'll reach, and what to expect after uploading your music to our service.",
+        readTime: "7 min read"
+      }
+    ],
+    "Music Distribution": [
+      {
+        title: "Supported Audio Formats and Quality Requirements",
+        content: "Learn about the technical requirements for uploading music, including supported formats (WAV, FLAC, MP3), bitrate recommendations, and file size limits.",
+        readTime: "4 min read"
+      },
+      {
+        title: "Metadata Best Practices",
+        content: "Proper metadata is crucial for your music's discoverability. Learn how to optimize track titles, artist names, genres, and tags for maximum reach.",
+        readTime: "6 min read"
+      },
+      {
+        title: "Release Scheduling and Timing",
+        content: "Strategic release timing can impact your music's success. Discover the best days and times to release music, and how to plan your release calendar.",
+        readTime: "5 min read"
+      }
+    ],
+    "Royalties & Payments": [
+      {
+        title: "How Streaming Royalties Work",
+        content: "Understand how streaming platforms calculate and distribute royalties, what affects your earnings, and how different platforms compare in terms of payout rates.",
+        readTime: "8 min read"
+      },
+      {
+        title: "Payment Methods and Schedules",
+        content: "Learn about available payment options (PayPal, bank transfer, check), minimum payout thresholds, and when you can expect to receive your earnings.",
+        readTime: "4 min read"
+      },
+      {
+        title: "Maximizing Your Revenue",
+        content: "Discover strategies to increase your streaming revenue, including playlist placement, fan engagement tactics, and cross-platform promotion.",
+        readTime: "10 min read"
+      }
+    ],
+    "Account Settings": [
+      {
+        title: "Managing Your Account Preferences",
+        content: "Customize your account settings, notification preferences, and privacy options to optimize your SoundWave experience.",
+        readTime: "3 min read"
+      },
+      {
+        title: "Upgrading and Downgrading Plans",
+        content: "Learn how to change your subscription plan, understand the differences between plans, and manage billing information.",
+        readTime: "4 min read"
+      }
+    ],
+    "Artist Services": [
+      {
+        title: "Promotional Tools and Features",
+        content: "Explore our built-in promotional tools including social media integration, playlist pitching, and marketing analytics to grow your audience.",
+        readTime: "7 min read"
+      },
+      {
+        title: "Collaborating with Other Artists",
+        content: "Learn how to set up collaborations, split royalties, and manage multi-artist releases through our platform.",
+        readTime: "5 min read"
+      }
+    ],
+    "Technical Support": [
+      {
+        title: "Troubleshooting Upload Issues",
+        content: "Common solutions for upload problems, including file format errors, network issues, and metadata validation failures.",
+        readTime: "6 min read"
+      },
+      {
+        title: "Platform Integration Problems",
+        content: "How to resolve issues with your music not appearing on streaming platforms, delayed distribution, and content ID claims.",
+        readTime: "8 min read"
+      }
+    ]
+  };
+
   const filteredFaqs = faqs.filter(faq => 
     faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
     faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -215,52 +308,108 @@ const HelpCenter = () => {
           </div>
         </div>
 
-        {/* Popular Articles */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Popular Articles
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-            {popularArticles.map((article, index) => (
-              <Card 
-                key={index} 
-                className="hover:shadow-md transition-all cursor-pointer hover:scale-102"
-                onClick={() => toggleArticle(article)}
+        {/* Category Articles */}
+        {selectedCategory && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold text-gray-900">
+                {selectedCategory} Articles
+              </h2>
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedCategory(null)}
+                className="flex items-center"
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <BookOpen className="w-5 h-5 text-purple-500" />
-                      <span className="text-gray-700 hover:text-purple-600 transition-colors">
-                        {article}
-                      </span>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Categories
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articlesByCategory[selectedCategory]?.map((article, index) => (
+                <Card key={index} className="hover:shadow-lg transition-all cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <BookOpen className="w-6 h-6 text-purple-500 mt-1" />
+                      <Badge variant="secondary" className="text-xs">
+                        {article.readTime}
+                      </Badge>
                     </div>
-                    <ExternalLink className="w-4 h-4 text-gray-400" />
-                  </div>
-                  {expandedArticles.includes(article) && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-sm text-gray-600">
-                        This article provides comprehensive information about {article.toLowerCase()}. 
-                        Click to read the full guide with step-by-step instructions and best practices.
-                      </p>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // In a real app, this would navigate to the article
-                        }}
-                      >
-                        Read Full Article
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    <CardTitle className="text-lg leading-tight">
+                      {article.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                      {article.content}
+                    </p>
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      onClick={() => {
+                        // In a real app, this would navigate to the full article
+                        toast({
+                          title: "Article opened",
+                          description: `Reading: ${article.title}`,
+                        });
+                      }}
+                    >
+                      Read Article
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Popular Articles */}
+        {!selectedCategory && (
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+              Popular Articles
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+              {popularArticles.map((article, index) => (
+                <Card 
+                  key={index} 
+                  className="hover:shadow-md transition-all cursor-pointer hover:scale-102"
+                  onClick={() => toggleArticle(article)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <BookOpen className="w-5 h-5 text-purple-500" />
+                        <span className="text-gray-700 hover:text-purple-600 transition-colors">
+                          {article}
+                        </span>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-gray-400" />
+                    </div>
+                    {expandedArticles.includes(article) && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-sm text-gray-600">
+                          This article provides comprehensive information about {article.toLowerCase()}. 
+                          Click to read the full guide with step-by-step instructions and best practices.
+                        </p>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // In a real app, this would navigate to the article
+                          }}
+                        >
+                          Read Full Article
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* FAQ Section */}
         <div className="max-w-4xl mx-auto">

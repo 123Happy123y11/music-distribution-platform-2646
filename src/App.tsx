@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { TracksProvider } from "@/contexts/TracksContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import HelpCenter from "./pages/HelpCenter";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/support" element={<Support />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
