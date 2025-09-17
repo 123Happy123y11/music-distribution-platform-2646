@@ -297,7 +297,7 @@ const HelpCenter = () => {
                     {selectedCategory === category.title && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <p className="text-sm text-purple-600 font-medium">
-                          Click to explore {category.articles} articles in this category
+                          ✓ Category selected - showing {category.articles} articles below
                         </p>
                       </div>
                     )}
@@ -349,7 +349,7 @@ const HelpCenter = () => {
                         // In a real app, this would navigate to the full article
                         toast({
                           title: "Article opened",
-                          description: `Reading: ${article.title}`,
+                          description: `Now reading: ${article.title}`,
                         });
                       }}
                     >

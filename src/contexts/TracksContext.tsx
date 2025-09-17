@@ -9,7 +9,7 @@ export interface Track {
   uploadDate: string;
   status: "processing" | "live" | "rejected";
   streams: number;
-  earnings: number;
+  revenue: number;
   platforms: string[];
   artwork: string;
   fileName: string;
@@ -19,7 +19,7 @@ export interface Track {
 interface TracksContextType {
   tracks: Track[];
   getUserTracks: (userId?: string) => Track[];
-  addTrack: (trackData: Omit<Track, "id" | "uploadDate" | "status" | "streams" | "earnings" | "platforms" | "artwork" | "userId">, userId?: string) => void;
+  addTrack: (trackData: Omit<Track, "id" | "uploadDate" | "status" | "streams" | "revenue" | "platforms" | "artwork" | "userId">, userId?: string) => void;
   updateTrack: (id: string, updates: Partial<Track>) => void;
   deleteTrack: (id: string) => void;
 }
@@ -75,9 +75,10 @@ export const TracksProvider = ({ children }: TracksProviderProps) => {
         uploadDate: "2024-01-15",
         status: "live",
         streams: 15420,
-        earnings: 123.45,
+        revenue: 123.45,
         platforms: ["Spotify", "Apple Music", "YouTube Music"],
-        artwork: "/placeholder.svg"
+        artwork: "/placeholder.svg",
+        userId: "guest"
       },
       {
         id: "2", 
@@ -89,9 +90,10 @@ export const TracksProvider = ({ children }: TracksProviderProps) => {
         uploadDate: "2024-01-10",
         status: "processing",
         streams: 0,
-        earnings: 0,
+        revenue: 0,
         platforms: [],
-        artwork: "/placeholder.svg"
+        artwork: "/placeholder.svg",
+        userId: "guest"
       },
       {
         id: "3",
@@ -103,9 +105,10 @@ export const TracksProvider = ({ children }: TracksProviderProps) => {
         uploadDate: "2024-01-05",
         status: "live",
         streams: 8930,
-        earnings: 67.89,
+        revenue: 67.89,
         platforms: ["Spotify", "Apple Music", "Amazon Music"],
-        artwork: "/placeholder.svg"
+        artwork: "/placeholder.svg",
+        userId: "guest"
       }
     ];
     setTracks(mockTracks);
@@ -116,14 +119,14 @@ export const TracksProvider = ({ children }: TracksProviderProps) => {
     return tracks.filter(track => track.userId === userId);
   };
 
-  const addTrack = (trackData: Omit<Track, "id" | "uploadDate" | "status" | "streams" | "earnings" | "platforms" | "artwork" | "userId">, userId?: string) => {
+  const addTrack = (trackData: Omit<Track, "id" | "uploadDate" | "status" | "streams" | "revenue" | "platforms" | "artwork" | "userId">, userId?: string) => {
     const newTrack: Track = {
       ...trackData,
       id: Date.now().toString(),
       uploadDate: new Date().toISOString().split('T')[0],
       status: "processing",
       streams: 0,
-      earnings: 0,
+      revenue: 0,
       platforms: [],
       artwork: "/placeholder.svg",
       userId: userId || 'guest'
