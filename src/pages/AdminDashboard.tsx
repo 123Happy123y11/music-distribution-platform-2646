@@ -29,8 +29,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTracksContext } from "@/contexts/TracksContext";
 
-interface PendingRelease {
+interface AdminRelease {
   id: string;
   title: string;
   artist: string;
@@ -39,9 +40,11 @@ interface PendingRelease {
   duration: string;
   uploadDate: string;
   userId: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "live" | "processing" | "rejected";
   fileUrl?: string;
   artwork?: string;
+  streams: number;
+  revenue: number;
   metadata: {
     explicit: boolean;
     copyright: string;
@@ -55,93 +58,34 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const { toast } = useToast();
+  const { tracks, updateTrack } = useTracksContext();
 
-  // Mock pending releases data
-  const [pendingReleases, setPendingReleases] = useState<PendingRelease[]>([
-    {
-      id: "rel_001",
-      title: "Summer Vibes",
-      artist: "DJ Alex",
-      album: "Beach Party",
-      genre: "Electronic",
-      duration: "3:42",
-      uploadDate: "2024-12-15T10:30:00Z",
-      userId: "user_123",
-      status: "pending",
-      artwork: "",
-      metadata: {
-        explicit: false,
-        copyright: "2024 DJ Alex Music",
-        isrc: "US-ABC-24-12345"
-      },
-      submissionNotes: "Original composition, all rights cleared"
+  // Convert tracks from context to admin format
+  const adminReleases: AdminRelease[] = tracks.map(track => ({
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    album: track.album,
+    genre: track.genre || "Unknown",
+    duration: track.duration || "3:00",
+    uploadDate: track.uploadDate || new Date().toISOString(),
+    userId: track.userId || "unknown",
+    status: track.status === "live" ? "live" : track.status === "processing" ? "pending" : track.status,
+    streams: track.streams,
+    revenue: track.revenue,
+    metadata: {
+      explicit: false,
+      copyright: `2024 ${track.artist}`,
+      isrc: `US-SW-24-${track.id.slice(-5)}`
     },
-    {
-      id: "rel_002", 
-      title: "Midnight Blues",
-      artist: "Sarah Johnson",
-      genre: "Blues",
-      duration: "4:15",
-      uploadDate: "2024-12-15T09:15:00Z",
-      userId: "user_456",
-      status: "pending",
-      artwork: "",
-      metadata: {
-        explicit: true,
-        copyright: "2024 Sarah Johnson"
-      },
-      submissionNotes: "Cover version - license obtained"
-    },
-    {
-      id: "rel_003",
-      title: "Rock Anthem",
-      artist: "The Rebels",
-      album: "Live Sessions",
-      genre: "Rock",
-      duration: "5:30",
-      uploadDate: "2024-12-14T16:45:00Z",
-      userId: "user_789",
-      status: "pending",
-      artwork: "",
-      metadata: {
-        explicit: false,
-        copyright: "2024 The Rebels Band"
-      }
-    },
-    {
-      id: "rel_004",
-      title: "Classical Symphony No. 1",
-      artist: "Orchestra Divine",
-      genre: "Classical",
-      duration: "12:30",
-      uploadDate: "2024-12-14T14:20:00Z",
-      userId: "user_101",
-      status: "approved",
-      artwork: "",
-      metadata: {
-        explicit: false,
-        copyright: "2024 Orchestra Divine"
-      }
-    },
-    {
-      id: "rel_005",
-      title: "Offensive Track",
-      artist: "Bad Actor",
-      genre: "Hip Hop",
-      duration: "3:15",
-      uploadDate: "2024-12-14T11:30:00Z",
-      userId: "user_202",
-      status: "rejected",
-      artwork: "",
-      metadata: {
-        explicit: true,
-        copyright: "2024 Bad Actor"
-      }
-    }
-  ]);
+    submissionNotes: "Artist uploaded via platform"
+  }));
 
-  const filteredReleases = pendingReleases.filter(release => {
-    const matchesFilter = filter === "all" || release.status === filter;
+  const filteredReleases = adminReleases.filter(release => {
+    const matchesFilter = filter === "all" || 
+      (filter === "pending" && (release.status === "pending" || release.status === "processing")) ||
+      (filter === "approved" && release.status === "live") ||
+      (filter === "rejected" && release.status === "rejected");
     const matchesSearch = searchQuery === "" || 
       release.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       release.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,22 +94,16 @@ const AdminDashboard = () => {
   });
 
   const stats = {
-    totalPending: pendingReleases.filter(r => r.status === "pending").length,
-    totalApproved: pendingReleases.filter(r => r.status === "approved").length,
-    totalRejected: pendingReleases.filter(r => r.status === "rejected").length,
-    totalToday: pendingReleases.filter(r => 
+    totalPending: adminReleases.filter(r => r.status === "pending" || r.status === "processing").length,
+    totalApproved: adminReleases.filter(r => r.status === "live").length,
+    totalRejected: adminReleases.filter(r => r.status === "rejected").length,
+    totalToday: adminReleases.filter(r => 
       new Date(r.uploadDate).toDateString() === new Date().toDateString()
     ).length
   };
 
   const handleApprove = (releaseId: string) => {
-    setPendingReleases(prev => 
-      prev.map(release => 
-        release.id === releaseId 
-          ? { ...release, status: "approved" as const }
-          : release
-      )
-    );
+    updateTrack(releaseId, { status: "live" });
     toast({
       title: "Release Approved",
       description: "The release has been approved and will be distributed to platforms.",
@@ -173,13 +111,7 @@ const AdminDashboard = () => {
   };
 
   const handleReject = (releaseId: string) => {
-    setPendingReleases(prev => 
-      prev.map(release => 
-        release.id === releaseId 
-          ? { ...release, status: "rejected" as const }
-          : release
-      )
-    );
+    updateTrack(releaseId, { status: "rejected" });
     toast({
       title: "Release Rejected",
       description: "The release has been rejected and the artist will be notified.",

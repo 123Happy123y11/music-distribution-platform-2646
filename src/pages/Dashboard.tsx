@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('Overview');
   const { getUserTracks } = useTracksContext();
   
   // Get user data safely
@@ -118,14 +119,443 @@ const Dashboard = () => {
     }
   };
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'Overview':
+        return (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100">Total Streams</p>
+                      <p className="text-2xl font-bold">{stats.totalStreams.toLocaleString()}</p>
+                    </div>
+                    <Play className="h-8 w-8 text-blue-200" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-100">Total Revenue</p>
+                      <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-green-200" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-100">Active Tracks</p>
+                      <p className="text-2xl font-bold">{stats.totalTracks}</p>
+                    </div>
+                    <Music className="h-8 w-8 text-purple-200" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-100">Avg. Streams</p>
+                      <p className="text-2xl font-bold">{stats.avgStreamsPerTrack.toLocaleString()}</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-orange-200" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Your latest uploads and updates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {recentActivity.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentActivity.map((activity, index) => (
+                        <div key={index} className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${getStatusColor(activity.status)}`}></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                            <p className="text-xs text-gray-500">{activity.time}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No recent activity</p>
+                      <Button 
+                        onClick={() => setIsUploadFormOpen(true)}
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                      >
+                        Upload Your First Track
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Platform Analytics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform Performance</CardTitle>
+                  <CardDescription>Streams across different platforms</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {platformData.map((platform, index) => (
+                      <div key={index}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="font-medium">{platform.name}</span>
+                          <span className="text-gray-600">{platform.streams.toLocaleString()} streams</span>
+                        </div>
+                        <Progress value={platform.streams / stats.totalStreams * 100} className="h-2" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        );
+
+      case 'My Tracks':
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Your Music Library</CardTitle>
+                  <CardDescription>Manage and track your uploaded music</CardDescription>
+                </div>
+                <Button 
+                  onClick={() => setIsUploadFormOpen(true)}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload Track
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {userTracks.length > 0 ? (
+                <div className="space-y-4">
+                  {userTracks.map((track) => (
+                    <div key={track.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => togglePlay(track.id)}
+                        >
+                          {playingTrack === track.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        </Button>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{track.title}</h3>
+                          <p className="text-gray-600">{track.artist}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">{track.streams.toLocaleString()} streams</p>
+                          <p className="text-sm text-gray-500">${track.revenue.toFixed(2)} earned</p>
+                        </div>
+                        <Badge className={`${getStatusColor(track.status)} text-white`}>
+                          {getStatusText(track.status)}
+                        </Badge>
+                        <Button variant="outline" size="icon">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No tracks uploaded yet</h3>
+                  <p className="text-gray-600 mb-6">Upload your first track to start distributing your music</p>
+                  <Button 
+                    onClick={() => setIsUploadFormOpen(true)}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Your First Track
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 'Analytics':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Streaming Analytics</CardTitle>
+                <CardDescription>Detailed insights into your music performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="text-center p-6 bg-blue-50 rounded-lg">
+                    <TrendingUp className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-blue-600">{stats.totalStreams.toLocaleString()}</p>
+                    <p className="text-sm text-blue-600">Total Streams</p>
+                  </div>
+                  <div className="text-center p-6 bg-green-50 rounded-lg">
+                    <Users className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-green-600">{Math.round(stats.totalStreams * 0.7).toLocaleString()}</p>
+                    <p className="text-sm text-green-600">Unique Listeners</p>
+                  </div>
+                  <div className="text-center p-6 bg-purple-50 rounded-lg">
+                    <Globe className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-purple-600">42</p>
+                    <p className="text-sm text-purple-600">Countries</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Breakdown</CardTitle>
+                <CardDescription>Performance across streaming platforms</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {platformData.map((platform, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{platform.name}</p>
+                        <p className="text-sm text-gray-500">{platform.streams.toLocaleString()} streams • ${platform.revenue.toFixed(2)} revenue</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">{((platform.streams / stats.totalStreams) * 100).toFixed(1)}%</p>
+                        <Progress value={(platform.streams / stats.totalStreams) * 100} className="w-24 h-2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'Earnings':
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <DollarSign className="w-8 h-8 mx-auto mb-2 text-green-200" />
+                    <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
+                    <p className="text-green-100">Total Earnings</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-2xl font-bold text-gray-900">${(stats.totalRevenue * 0.3).toFixed(2)}</p>
+                    <p className="text-gray-600">This Month</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <TrendingUp className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-2xl font-bold text-gray-900">${(stats.totalRevenue * 0.15).toFixed(2)}</p>
+                    <p className="text-gray-600">This Week</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Earnings</CardTitle>
+                <CardDescription>Your latest royalty payments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {userTracks.length > 0 ? (
+                  <div className="space-y-4">
+                    {userTracks.slice(0, 5).map((track, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-900">{track.title}</p>
+                          <p className="text-sm text-gray-500">{track.streams.toLocaleString()} streams</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-green-600">${track.revenue.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">Dec 2024</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No earnings yet</p>
+                    <p className="text-sm text-gray-400">Upload music to start earning royalties</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'Profile':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Artist Profile</CardTitle>
+              <CardDescription>Manage your artist information and preferences</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center space-x-6">
+                  <Avatar className="w-24 h-24">
+                    <AvatarImage src={currentUser.avatar} />
+                    <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-2xl">
+                      {currentUser.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">{currentUser.name}</h3>
+                    <p className="text-gray-600">{currentUser.email}</p>
+                    <Badge className="mt-2">{currentUser.plan} Plan</Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Account Statistics</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Member since:</span>
+                        <span className="font-medium">{currentUser.joinDate}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total tracks:</span>
+                        <span className="font-medium">{stats.totalTracks}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total streams:</span>
+                        <span className="font-medium">{stats.totalStreams.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Quick Actions</h4>
+                    <div className="space-y-2">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Account Settings
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start" onClick={() => setIsUpgradeModalOpen(true)}>
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade Plan
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'Settings':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>Manage your account preferences and settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">General Settings</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">Email notifications</p>
+                        <p className="text-sm text-gray-600">Receive updates about your releases</p>
+                      </div>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">Payment settings</p>
+                        <p className="text-sm text-gray-600">Manage how you receive royalties</p>
+                      </div>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">Privacy settings</p>
+                        <p className="text-sm text-gray-600">Control your profile visibility</p>
+                      </div>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Account Actions</h3>
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download My Data
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Account
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return <div>Select a tab from the sidebar</div>;
+    }
+  };
+
   // Sidebar navigation items
   const navigationItems = [
-    { name: 'Overview', icon: BarChart3, current: true },
-    { name: 'My Tracks', icon: Music, current: false },
-    { name: 'Analytics', icon: TrendingUp, current: false },
-    { name: 'Earnings', icon: DollarSign, current: false },
-    { name: 'Profile', icon: Users, current: false },
-    { name: 'Settings', icon: Settings, current: false },
+    { name: 'Overview', icon: BarChart3 },
+    { name: 'My Tracks', icon: Music },
+    { name: 'Analytics', icon: TrendingUp },
+    { name: 'Earnings', icon: DollarSign },
+    { name: 'Profile', icon: Users },
+    { name: 'Settings', icon: Settings },
   ];
 
   return (
@@ -154,18 +584,18 @@ const Dashboard = () => {
             {navigationItems.map((item) => {
               const IconComponent = item.icon;
               return (
-                <a
+                <button
                   key={item.name}
-                  href="#"
+                  onClick={() => setActiveTab(item.name)}
                   className={`${
-                    item.current
+                    activeTab === item.name
                       ? 'bg-purple-50 border-purple-500 text-purple-700'
                       : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  } group flex items-center px-3 py-2 text-sm font-medium border-l-4 rounded-r-lg`}
+                  } w-full group flex items-center px-3 py-2 text-sm font-medium border-l-4 rounded-r-lg transition-colors`}
                 >
                   <IconComponent className="mr-3 h-5 w-5" />
                   {item.name}
-                </a>
+                </button>
               );
             })}
           </div>
@@ -253,194 +683,8 @@ const Dashboard = () => {
 
         {/* Dashboard Content */}
         <div className="px-4 sm:px-6 lg:px-8 py-8">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100">Total Streams</p>
-                    <p className="text-2xl font-bold">{stats.totalStreams.toLocaleString()}</p>
-                  </div>
-                  <Play className="h-8 w-8 text-blue-200" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100">Total Revenue</p>
-                    <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-200" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100">Active Tracks</p>
-                    <p className="text-2xl font-bold">{stats.totalTracks}</p>
-                  </div>
-                  <Music className="h-8 w-8 text-purple-200" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100">Avg. Streams</p>
-                    <p className="text-2xl font-bold">{stats.avgStreamsPerTrack.toLocaleString()}</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-orange-200" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Tracks */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Music className="w-5 h-5 mr-2" />
-                  Recent Tracks
-                </CardTitle>
-                <CardDescription>Your latest uploads and their performance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {userTracks.length > 0 ? (
-                  <div className="space-y-4">
-                    {userTracks.slice(0, 5).map((track) => (
-                      <div key={track.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
-                        <div className="flex items-center space-x-3">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => togglePlay(track.id)}
-                            className="w-8 h-8"
-                          >
-                            {playingTrack === track.id ? (
-                              <Pause className="w-3 h-3" />
-                            ) : (
-                              <Play className="w-3 h-3" />
-                            )}
-                          </Button>
-                          <div>
-                            <p className="font-medium text-gray-900">{track.title}</p>
-                            <p className="text-sm text-gray-500">{track.artist}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right hidden sm:block">
-                            <p className="text-sm font-medium">{track.streams.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500">streams</p>
-                          </div>
-                          <Badge 
-                            className={`${getStatusColor(track.status)} text-white`}
-                            variant="secondary"
-                          >
-                            {getStatusText(track.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No tracks yet</h3>
-                    <p className="text-gray-600 mb-4">Upload your first track to get started</p>
-                    <Button onClick={() => setIsUploadFormOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Upload Track
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Platform Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Globe className="w-5 h-5 mr-2" />
-                  Platform Performance
-                </CardTitle>
-                <CardDescription>How your music performs across platforms</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {platformData.map((platform, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{platform.name}</span>
-                        <span className="text-sm text-gray-500">{platform.streams.toLocaleString()} streams</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
-                          style={{ 
-                            width: `${stats.totalStreams > 0 ? (platform.streams / stats.totalStreams) * 100 : 0}%` 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        ${platform.revenue.toFixed(2)} revenue
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>Your latest actions and updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentActivity.length > 0 ? (
-                <div className="flow-root">
-                  <ul className="-mb-8">
-                    {recentActivity.map((activity, activityIdx) => (
-                      <li key={activityIdx}>
-                        <div className="relative pb-8">
-                          {activityIdx !== recentActivity.length - 1 ? (
-                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
-                          ) : null}
-                          <div className="relative flex space-x-3">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                              <Music className="h-4 w-4 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div>
-                                <p className="text-sm text-gray-900">{activity.title}</p>
-                                <p className="text-sm text-gray-500">{activity.time}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <p className="text-center text-gray-500 py-4">No recent activity</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Tab Content */}
+          {renderTabContent()}
         </div>
       </div>
 
