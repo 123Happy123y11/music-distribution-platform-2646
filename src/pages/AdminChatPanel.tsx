@@ -45,7 +45,7 @@ const AdminChatPanel: React.FC = () => {
   } = useChat();
 
   // Admin access check (in real app, this would be role-based)
-  const isAdmin = user?.email?.includes('admin') || user?.name?.toLowerCase().includes('admin') || user?.email === 'test@example.com';
+  const isAdmin = user?.email?.includes('admin') || user?.name?.toLowerCase().includes('admin') || user?.name?.toLowerCase().includes('owner') || user?.email === 'test@example.com';
 
   const filteredSessions = allSessions.filter(session => {
     const matchesSearch = session.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -10,6 +10,7 @@ import LiveChatWidget from "@/components/LiveChatWidget";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import OwnerDashboard from "./pages/OwnerDashboard";
 import SupportDashboard from "./pages/SupportDashboard";
 import AdminChatPanel from "./pages/AdminChatPanel";
 import HelpCenter from "./pages/HelpCenter";
@@ -31,6 +32,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/owner" element={<OwnerDashboard />} />
                 <Route path="/admin/chat" element={<AdminChatPanel />} />
                 <Route path="/support/dashboard" element={<SupportDashboard />} />
                 <Route path="/help" element={<HelpCenter />} />
