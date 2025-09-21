@@ -24,7 +24,8 @@ import {
   Filter,
   Search,
   Calendar,
-  ArrowLeft
+  ArrowLeft,
+  MessageCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -188,6 +189,12 @@ const AdminDashboard = () => {
                 <Button variant="outline">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
+                </Button>
+              </Link>
+              <Link to="/admin/chat">
+                <Button variant="outline">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat Management
                 </Button>
               </Link>
               <Button variant="outline">

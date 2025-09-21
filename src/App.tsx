@@ -5,9 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TracksProvider } from "@/contexts/TracksContext";
+import { ChatProvider } from "@/contexts/ChatContext";
+import LiveChatWidget from "@/components/LiveChatWidget";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import SupportDashboard from "./pages/SupportDashboard";
+import AdminChatPanel from "./pages/AdminChatPanel";
 import HelpCenter from "./pages/HelpCenter";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
@@ -18,21 +22,26 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TracksProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/help" element={<HelpCenter />} />
-              <Route path="/support" element={<Support />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <ChatProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/chat" element={<AdminChatPanel />} />
+                <Route path="/support/dashboard" element={<SupportDashboard />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/support" element={<Support />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <LiveChatWidget />
+            </BrowserRouter>
+          </TooltipProvider>
+        </ChatProvider>
       </TracksProvider>
     </AuthProvider>
   </QueryClientProvider>
