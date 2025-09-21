@@ -29,7 +29,8 @@ import {
   Users,
   Globe,
   Menu,
-  X
+  X,
+  Headphones
 } from "lucide-react";
 import UploadForm from "@/components/UploadForm";
 import PlanUpgradeModal from "@/components/PlanUpgradeModal";
