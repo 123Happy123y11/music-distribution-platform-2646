@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Upload, 
   Music, 
@@ -32,16 +33,19 @@ import {
 } from "lucide-react";
 import UploadForm from "@/components/UploadForm";
 import PlanUpgradeModal from "@/components/PlanUpgradeModal";
+import { EditTrackModal } from "@/components/EditTrackModal";
 import { useTracksContext } from "@/contexts/TracksContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const [isUploadFormOpen, setIsUploadFormOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTrackForEdit, setSelectedTrackForEdit] = useState(null);
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
-  const { getUserTracks } = useTracksContext();
+  const { getUserTracks, deleteTrack } = useTracksContext();
   
   // Get user data safely
   let user = null;
@@ -80,6 +84,13 @@ const Dashboard = () => {
     time: '2 hours ago',
     status: track.status
   }));
+
+  // Handle track deletion
+  const handleDeleteTrack = (trackId: string) => {
+    if (window.confirm('Are you sure you want to delete this track? This action cannot be undone.')) {
+      deleteTrack(trackId);
+    }
+  };
 
   // Platform analytics mock data
   const platformData = [
@@ -280,9 +291,31 @@ const Dashboard = () => {
                         <Badge className={`${getStatusColor(track.status)} text-white`}>
                           {getStatusText(track.status)}
                         </Badge>
-                        <Button variant="outline" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedTrackForEdit(track);
+                                setIsEditModalOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Track
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteTrack(track.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Track
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
@@ -709,6 +742,16 @@ const Dashboard = () => {
       <PlanUpgradeModal 
         isOpen={isUpgradeModalOpen} 
         onClose={() => setIsUpgradeModalOpen(false)} 
+      />
+
+      {/* Edit Track Modal */}
+      <EditTrackModal 
+        track={selectedTrackForEdit} 
+        isOpen={isEditModalOpen} 
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTrackForEdit(null);
+        }}
       />
     </div>
   );
