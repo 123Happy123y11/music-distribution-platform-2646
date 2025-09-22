@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useIntercom } from '@/hooks/useIntercom';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { updateUser, shutdown } = useIntercom();
 
   // Check for existing session on mount
   useEffect(() => {
@@ -62,6 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setIsAuthenticated(true);
     localStorage.setItem('soundwave_user', JSON.stringify(userData));
+    
+    // Update Intercom with user data
+    updateUser({
+      user_id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      plan: userData.plan,
+      created_at: Math.floor(new Date(userData.joinDate).getTime() / 1000)
+    });
   };
 
   const signup = async (name: string, email: string, password: string): Promise<void> => {
@@ -83,12 +94,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setIsAuthenticated(true);
     localStorage.setItem('soundwave_user', JSON.stringify(userData));
+    
+    // Update Intercom with user data
+    updateUser({
+      user_id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      plan: userData.plan,
+      created_at: Math.floor(Date.now() / 1000)
+    });
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('soundwave_user');
+    
+    // Shutdown Intercom session
+    shutdown();
   };
 
   const value: AuthContextType = {
