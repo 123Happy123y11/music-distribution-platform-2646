@@ -132,9 +132,9 @@ const LiveChatWidget: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-96 h-[600px] max-h-[80vh]">
-      <Card className="h-full flex flex-col shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+      <Card className="h-full flex flex-col shadow-2xl border-0 bg-white backdrop-blur-sm">
         {/* Header */}
-        <CardHeader className="pb-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+        <CardHeader className="flex-shrink-0 pb-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <MessageCircle className="w-5 h-5" />
@@ -170,9 +170,9 @@ const LiveChatWidget: React.FC = () => {
         </CardHeader>
 
         {/* Messages */}
-        <CardContent className="flex-1 p-0">
-          <ScrollArea className="h-full p-4">
-            <div className="space-y-4">
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-4 min-h-full">
               {currentSession?.messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -190,7 +190,7 @@ const LiveChatWidget: React.FC = () => {
                   </div>
                   <div
                     className={cn(
-                      "max-w-[80%] rounded-2xl px-4 py-2 text-sm",
+                      "max-w-[80%] rounded-2xl px-4 py-2 text-sm break-words",
                       msg.sender === 'user'
                         ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                         : msg.sender === 'bot'
@@ -204,12 +204,12 @@ const LiveChatWidget: React.FC = () => {
               ))}
               
               {currentSession?.status === 'bot' && currentSession.messages.length > 1 && (
-                <div className="flex justify-center">
+                <div className="flex justify-center pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleRequestSupport}
-                    className="text-xs"
+                    className="text-xs bg-white hover:bg-gray-50"
                   >
                     <Headphones className="w-3 h-3 mr-1" />
                     Speak to Support Agent
@@ -217,14 +217,14 @@ const LiveChatWidget: React.FC = () => {
                 </div>
               )}
               
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-4" />
             </div>
           </ScrollArea>
-        </CardContent>
+        </div>
 
         {/* Input */}
         {currentSession && currentSession.status !== 'closed' && (
-          <div className="p-4 border-t bg-gray-50">
+          <div className="flex-shrink-0 p-4 border-t bg-gray-50 rounded-b-lg">
             <form onSubmit={handleSendMessage} className="flex space-x-2">
               <Input
                 ref={inputRef}
@@ -233,6 +233,8 @@ const LiveChatWidget: React.FC = () => {
                 placeholder={
                   currentSession.status === 'queued'
                     ? "You're in queue. Please wait..."
+                    : currentSession.status === 'connected'
+                    ? `Chatting with ${currentSession.assignedSupport ? supportAgents.find(a => a.id === currentSession.assignedSupport)?.name || 'Support Agent' : 'Support Agent'}...`
                     : "Type your message..."
                 }
                 disabled={currentSession.status === 'queued'}

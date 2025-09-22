@@ -166,6 +166,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendMessage = (content: string, sender: 'user' | 'bot' | 'support', senderName?: string) => {
     if (!currentSession) return;
 
+    console.log('Sending message:', { content, sender, sessionId: currentSession.id, status: currentSession.status });
+
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}-${Math.random()}`,
       content,
@@ -210,6 +212,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }, 1000 + Math.random() * 2000); // Simulate bot thinking time
     }
+
+    // If this is a support message and the session is connected, maintain the connection
+    if (sender === 'support' && currentSession.status === 'connected') {
+      console.log('Support agent sent message, maintaining connection');
+    }
   };
 
   const requestHumanSupport = () => {
@@ -229,6 +236,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     if (availableAgent) {
+      console.log('Connecting user to support agent:', availableAgent.name);
+      
       // Connect immediately
       const connectMessage: ChatMessage = {
         id: `msg-${Date.now()}-system`,
@@ -251,10 +260,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update agent's active sessions
       setSupportAgents(prev => prev.map(agent => 
         agent.id === availableAgent.id 
-          ? { ...agent, activeSessions: [...agent.activeSessions, currentSession.id] }
+          ? { ...agent, activeSessions: [...agent.activeSessions, currentSession.id], status: 'busy' }
           : agent
       ));
     } else {
+      console.log('No available agents, adding to queue');
+      
       // Add to queue
       const queueMessage: ChatMessage = {
         id: `msg-${Date.now()}-system`,
@@ -268,7 +279,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCurrentSession(updatedSession);
-    setAllSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
+    setAllSessions(prev => {
+      const newSessions = prev.map(s => s.id === currentSession.id ? updatedSession : s);
+      console.log('Updated sessions:', newSessions);
+      return newSessions;
+    });
   };
 
   const acceptChat = (sessionId: string, agentId: string) => {
@@ -314,6 +329,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const endSupportSession = (sessionId: string) => {
+    console.log('Ending support session:', sessionId);
     const session = allSessions.find(s => s.id === sessionId);
     if (!session) return;
 
@@ -323,17 +339,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastActivity: new Date()
     };
 
+    const endMessage: ChatMessage = {
+      id: `msg-${Date.now()}-system`,
+      content: 'This support session has been ended. Thank you for using SoundWave support! If you need further assistance, feel free to start a new chat.',
+      sender: 'bot',
+      timestamp: new Date(),
+      senderName: 'System'
+    };
+
+    updatedSession.messages = [...updatedSession.messages, endMessage];
+
     setAllSessions(prev => prev.map(s => s.id === sessionId ? updatedSession : s));
 
     if (currentSession?.id === sessionId) {
       setCurrentSession(updatedSession);
     }
 
-    // Remove from agent's active sessions
+    // Remove from agent's active sessions and update status
     if (session.assignedSupport) {
       setSupportAgents(prev => prev.map(agent => 
         agent.id === session.assignedSupport 
-          ? { ...agent, activeSessions: agent.activeSessions.filter(id => id !== sessionId) }
+          ? { 
+              ...agent, 
+              activeSessions: agent.activeSessions.filter(id => id !== sessionId),
+              status: agent.activeSessions.filter(id => id !== sessionId).length === 0 ? 'online' : 'busy'
+            }
           : agent
       ));
     }
