@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { IntercomSetup } from "@/components/IntercomSetup";
 import { 
   Upload, 
   Music, 
@@ -577,6 +578,39 @@ const Dashboard = () => {
           </Card>
         );
 
+      case 'Support':
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <IntercomSetup />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HelpCircle className="w-5 h-5" />
+                    Quick Help
+                  </CardTitle>
+                  <CardDescription>Common questions and resources</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Link to="/help" className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      <HelpCircle className="w-4 h-4 mr-2" />
+                      Visit Help Center
+                    </Button>
+                  </Link>
+                  <Link to="/support" className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Contact Support
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
       default:
         return <div>Select a tab from the sidebar</div>;
     }
@@ -589,6 +623,7 @@ const Dashboard = () => {
     { name: 'Analytics', icon: TrendingUp },
     { name: 'Earnings', icon: DollarSign },
     { name: 'Profile', icon: Users },
+    { name: 'Support', icon: MessageSquare },
     { name: 'Settings', icon: Settings },
   ];
 
