@@ -830,6 +830,294 @@ const Dashboard = () => {
           </Card>
         );
 
+      case 'Profile':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Profile Information
+                </CardTitle>
+                <CardDescription>Manage your public profile and artist information</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-6">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={currentUser.avatar} />
+                    <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg">
+                      {currentUser.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Button variant="outline" size="sm">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Change Avatar
+                    </Button>
+                    <p className="text-sm text-gray-500">PNG, JPG or GIF. Max size 2MB.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Artist Name</label>
+                    <Input 
+                      defaultValue={currentUser.name}
+                      placeholder="Enter your artist name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <Input 
+                      type="email"
+                      defaultValue={currentUser.email}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    rows={4}
+                    placeholder="Tell your fans about yourself and your music..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="us">United States</SelectItem>
+                        <SelectItem value="uk">United Kingdom</SelectItem>
+                        <SelectItem value="ca">Canada</SelectItem>
+                        <SelectItem value="au">Australia</SelectItem>
+                        <SelectItem value="de">Germany</SelectItem>
+                        <SelectItem value="fr">France</SelectItem>
+                        <SelectItem value="jp">Japan</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Primary genre" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pop">Pop</SelectItem>
+                        <SelectItem value="rock">Rock</SelectItem>
+                        <SelectItem value="hiphop">Hip Hop</SelectItem>
+                        <SelectItem value="electronic">Electronic</SelectItem>
+                        <SelectItem value="jazz">Jazz</SelectItem>
+                        <SelectItem value="classical">Classical</SelectItem>
+                        <SelectItem value="folk">Folk</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                    Save Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Social Media Links */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Social Media</CardTitle>
+                <CardDescription>Connect your social media profiles</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Instagram</label>
+                  <Input placeholder="@username" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
+                  <Input placeholder="@username" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">YouTube</label>
+                  <Input placeholder="Channel URL" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                  <Input placeholder="https://" />
+                </div>
+                <div className="flex justify-end">
+                  <Button variant="outline">
+                    Update Links
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'Settings':
+        return (
+          <div className="space-y-6">
+            {/* Account Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Account Settings
+                </CardTitle>
+                <CardDescription>Manage your account preferences and security</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Change Name</p>
+                      <p className="text-sm text-gray-600">Update your display name</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const newName = prompt('Enter your new name:', currentUser.name);
+                        if (newName && newName.trim()) {
+                          // In a real app, you'd update this via API
+                          console.log('Name change requested:', newName);
+                          alert('Name change submitted for review');
+                        }
+                      }}
+                    >
+                      Change Name
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Email notifications</p>
+                      <p className="text-sm text-gray-600">Receive updates about your music</p>
+                    </div>
+                    <input type="checkbox" defaultChecked className="rounded" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Marketing emails</p>
+                      <p className="text-sm text-gray-600">Tips and promotional content</p>
+                    </div>
+                    <input type="checkbox" className="rounded" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">SMS notifications</p>
+                      <p className="text-sm text-gray-600">Get text alerts for important updates</p>
+                    </div>
+                    <input type="checkbox" className="rounded" />
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Password & Security</h3>
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Change Password
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Enable Two-Factor Authentication
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Settings</h3>
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start">
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Payment Methods
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Download className="w-4 h-4 mr-2" />
+                      Tax Information
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Data & Privacy</h3>
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download My Data
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Account
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Track Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Track Management</CardTitle>
+                <CardDescription>Manage your released tracks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Takedown Releases</p>
+                      <p className="text-sm text-gray-600">Remove tracks from all platforms</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        if (processedTracks.length === 0) {
+                          alert('No tracks available for takedown');
+                          return;
+                        }
+                        const trackOptions = processedTracks.map(track => `${track.title} - ${track.artist}`).join('\n');
+                        const selectedTrack = prompt(`Select a track to takedown:\n\n${trackOptions}\n\nEnter track title:`);
+                        if (selectedTrack) {
+                          const trackToRemove = processedTracks.find(t => 
+                            t.title.toLowerCase().includes(selectedTrack.toLowerCase())
+                          );
+                          if (trackToRemove) {
+                            if (confirm(`Are you sure you want to takedown "${trackToRemove.title}"? This will remove it from all platforms.`)) {
+                              handleDeleteTrack(trackToRemove.id);
+                              alert('Track takedown initiated. It will be removed from all platforms within 24-48 hours.');
+                            }
+                          } else {
+                            alert('Track not found. Please enter the exact track title.');
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Takedown Track
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       case 'Support':
         return (
           <div className="space-y-6">
