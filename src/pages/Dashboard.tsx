@@ -132,7 +132,7 @@ const Dashboard = () => {
   const recentActivity = userTracks.slice(0, 5).map(track => ({
     type: 'upload',
     title: `${track.title} was uploaded`,
-    time: '2 hours ago',
+    time: new Date(track.uploadDate).toLocaleDateString(),
     status: track.status
   }));
 
@@ -166,6 +166,8 @@ const Dashboard = () => {
     { name: 'YouTube Music', streams: Math.round(stats.totalStreams * 0.15), revenue: stats.totalRevenue * 0.15 },
     { name: 'Amazon Music', streams: Math.round(stats.totalStreams * 0.12), revenue: stats.totalRevenue * 0.12 }
   ];
+
+
 
   const togglePlay = (trackId: string) => {
     setPlayingTrack(playingTrack === trackId ? null : trackId);

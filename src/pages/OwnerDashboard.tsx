@@ -21,87 +21,39 @@ import {
   Upload
 } from 'lucide-react';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'owner' | 'admin' | 'support' | 'user';
-  status: 'active' | 'inactive' | 'suspended';
-  joinDate: string;
-  lastActive: string;
-  avatar?: string;
-}
-
-interface SystemStats {
+interface PlatformStats {
   totalUsers: number;
   totalTracks: number;
   totalRevenue: number;
-  activeSessions: number;
-  supportTickets: number;
-  pendingReleases: number;
+  monthlyRevenue: number;
+  activeTracks: number;
+  totalStreams: number;
+  platformGrowth: number;
 }
 
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@example.com',
-    role: 'owner',
-    status: 'active',
-    joinDate: '2023-01-15',
-    lastActive: '2 minutes ago',
-    avatar: undefined
-  },
-  {
-    id: '2',
-    name: 'Sarah Admin',
-    email: 'sarah.admin@soundwave.com',
-    role: 'admin',
-    status: 'active',
-    joinDate: '2023-02-20',
-    lastActive: '5 minutes ago',
-    avatar: undefined
-  },
-  {
-    id: '3',
-    name: 'Mike Support',
-    email: 'mike.support@soundwave.com',
-    role: 'support',
-    status: 'active',
-    joinDate: '2023-03-10',
-    lastActive: '1 hour ago',
-    avatar: undefined
-  },
-  {
-    id: '4',
-    name: 'Emma Rodriguez',
-    email: 'emma@example.com',
-    role: 'user',
-    status: 'active',
-    joinDate: '2023-11-05',
-    lastActive: '30 minutes ago',
-    avatar: undefined
-  },
-  {
-    id: '5',
-    name: 'David Johnson',
-    email: 'david@example.com',
-    role: 'user',
-    status: 'suspended',
-    joinDate: '2023-10-15',
-    lastActive: '3 days ago',
-    avatar: undefined
-  }
-];
+interface RevenueData {
+  platform: string;
+  revenue: number;
+  percentage: number;
+  growth: number;
+}
 
-const mockSystemStats: SystemStats = {
+const mockPlatformStats: PlatformStats = {
   totalUsers: 15847,
   totalTracks: 89342,
   totalRevenue: 234567.89,
-  activeSessions: 1247,
-  supportTickets: 23,
-  pendingReleases: 156
+  monthlyRevenue: 28540.32,
+  activeTracks: 78921,
+  totalStreams: 15234567,
+  platformGrowth: 12.5
 };
+
+const mockRevenueData: RevenueData[] = [
+  { platform: 'Spotify', revenue: 105850.45, percentage: 45.1, growth: 15.2 },
+  { platform: 'Apple Music', revenue: 65743.21, percentage: 28.0, growth: 8.7 },
+  { platform: 'YouTube Music', revenue: 35184.67, percentage: 15.0, growth: 22.3 },
+  { platform: 'Amazon Music', revenue: 27789.56, percentage: 11.9, growth: 5.4 }
+];
 
 const OwnerDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
