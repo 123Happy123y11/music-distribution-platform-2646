@@ -35,8 +35,6 @@ import {
   X,
   Headphones,
   Search,
-  Filter,
-  SortAsc,
   Copy,
   ExternalLink,
   RefreshCw
@@ -59,7 +57,7 @@ const Dashboard = () => {
   const [trackSortBy, setTrackSortBy] = useState('uploadDate');
   const [trackFilterBy, setTrackFilterBy] = useState('all');
   const [earningsFilter, setEarningsFilter] = useState('all');
-  const { getUserTracks, deleteTrack } = useTracksContext();
+  const { getUserTracks, deleteTrack, updateTrack } = useTracksContext();
   
   // Get user data safely
   let user = null;
@@ -81,11 +79,11 @@ const Dashboard = () => {
   };
 
   // Get only the current user's tracks
-  let userTracks = getUserTracks(currentUser.id || 'guest');
+  const userTracks = getUserTracks(currentUser.id || 'guest');
 
   // Filter and sort tracks for My Tracks tab
-  const filteredAndSortedTracks = () => {
-    let filtered = userTracks;
+  const getFilteredAndSortedTracks = () => {
+    let filtered = [...userTracks];
     
     // Search filter
     if (trackSearchTerm) {
@@ -120,7 +118,7 @@ const Dashboard = () => {
     return sorted;
   };
 
-  const processedTracks = filteredAndSortedTracks();
+  const processedTracks = getFilteredAndSortedTracks();
 
   // Calculate stats from user's tracks only
   const stats = {
