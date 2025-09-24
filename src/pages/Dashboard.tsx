@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,14 +13,12 @@ import {
   Edit,
   Trash2,
   Plus,
-  Settings,
   User,
   BarChart3,
   Search,
   Copy,
   RefreshCw,
-  Menu,
-  X
+  Menu
 } from "lucide-react";
 import UploadForm from "@/components/UploadForm";
 import { useTracksContext } from "@/contexts/TracksContext";
@@ -34,10 +31,27 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBy, setFilterBy] = useState("all");
 
-  const { getUserTracks, deleteTrack, updateTrack } = useTracksContext();
-  const { user } = useAuth();
+  // Safely get contexts with error handling
+  let getUserTracks, deleteTrack, updateTrack, user;
+  
+  try {
+    const tracksContext = useTracksContext();
+    const authContext = useAuth();
+    
+    getUserTracks = tracksContext.getUserTracks;
+    deleteTrack = tracksContext.deleteTrack;
+    updateTrack = tracksContext.updateTrack;
+    user = authContext.user;
+  } catch (error) {
+    console.error('Context error:', error);
+    // Provide fallback functions
+    getUserTracks = () => [];
+    deleteTrack = () => {};
+    updateTrack = () => {};
+    user = null;
+  }
 
-  const userTracks = getUserTracks(user?.id || 'guest');
+  const userTracks = getUserTracks ? getUserTracks(user?.id || 'guest') : [];
 
   // Calculate stats
   const stats = {
@@ -56,13 +70,15 @@ const Dashboard = () => {
 
   const handleDeleteTrack = (trackId: string) => {
     if (window.confirm('Are you sure you want to delete this track?')) {
-      deleteTrack(trackId);
+      if (deleteTrack) deleteTrack(trackId);
     }
   };
 
   const handleCopyLink = (track: any) => {
     const link = `https://tunetracks.com/track/${track.id}`;
-    navigator.clipboard.writeText(link);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(link).catch(console.error);
+    }
     console.log('Link copied:', link);
   };
 
@@ -248,9 +264,13 @@ const Dashboard = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => updateTrack(track.id, { 
-                        streams: (track.streams || 0) + Math.floor(Math.random() * 100) + 10 
-                      })}
+                      onClick={() => {
+                        if (updateTrack) {
+                          updateTrack(track.id, { 
+                            streams: (track.streams || 0) + Math.floor(Math.random() * 100) + 10 
+                          });
+                        }
+                      }}
                       className="gap-2"
                     >
                       <RefreshCw className="h-4 w-4" />
