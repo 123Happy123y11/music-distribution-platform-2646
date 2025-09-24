@@ -23,7 +23,7 @@ const Header = ({ onLoginClick, onPricingClick }: HeaderProps) => {
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
               <Music className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">SoundWave</span>
+            <span className="text-2xl font-bold text-white">Tune Tracks</span>
           </Link>
 
           {/* Desktop Navigation */}

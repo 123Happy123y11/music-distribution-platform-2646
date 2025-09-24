@@ -16,8 +16,8 @@ declare global {
 
 export const useIntercom = () => {
   useEffect(() => {
-    // Initialize Intercom if it's loaded
-    if (window.Intercom) {
+    // Initialize Intercom if it's loaded and properly configured
+    if (window.Intercom && window.intercomSettings?.app_id && window.intercomSettings.app_id !== 'YOUR_INTERCOM_APP_ID') {
       window.Intercom('boot', window.intercomSettings);
     }
   }, []);
@@ -28,7 +28,7 @@ export const useIntercom = () => {
     user_id?: string;
     [key: string]: any;
   }) => {
-    if (window.Intercom) {
+    if (window.Intercom && window.intercomSettings?.app_id && window.intercomSettings.app_id !== 'YOUR_INTERCOM_APP_ID') {
       window.Intercom('update', userData);
     }
   };
@@ -58,7 +58,7 @@ export const useIntercom = () => {
   };
 
   const shutdown = () => {
-    if (window.Intercom) {
+    if (window.Intercom && window.intercomSettings?.app_id && window.intercomSettings.app_id !== 'YOUR_INTERCOM_APP_ID') {
       window.Intercom('shutdown');
     }
   };
