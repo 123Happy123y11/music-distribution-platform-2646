@@ -608,6 +608,7 @@ const Dashboard = () => {
       <UploadForm 
         isOpen={isUploadFormOpen} 
         onClose={() => setIsUploadFormOpen(false)} 
+        userId={user?.id || 'guest'}
       />
     </div>
   );
