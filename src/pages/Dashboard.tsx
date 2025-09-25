@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Upload, 
   Music, 
@@ -18,7 +20,8 @@ import {
   Search,
   Copy,
   RefreshCw,
-  Menu
+  Menu,
+  Save
 } from "lucide-react";
 import UploadForm from "@/components/UploadForm";
 import { useTracksContext } from "@/contexts/TracksContext";
@@ -30,6 +33,18 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBy, setFilterBy] = useState("all");
+  
+  // Profile form state
+  const [profileData, setProfileData] = useState({
+    name: "",
+    email: "",
+    country: "",
+    genre: "",
+    bio: ""
+  });
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
+  
+  const { toast } = useToast();
 
   // Safely get contexts with error handling
   let getUserTracks, deleteTrack, updateTrack, user;
@@ -50,6 +65,53 @@ const Dashboard = () => {
     updateTrack = () => {};
     user = null;
   }
+
+  // Load profile data from localStorage or user context
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      setProfileData(JSON.parse(savedProfile));
+    } else if (user) {
+      setProfileData({
+        name: user.name || "",
+        email: user.email || "",
+        country: "",
+        genre: "",
+        bio: ""
+      });
+    }
+  }, [user]);
+
+  // Save profile data
+  const handleSaveProfile = async () => {
+    setIsProfileSaving(true);
+    try {
+      // Save to localStorage
+      localStorage.setItem('userProfile', JSON.stringify(profileData));
+      
+      // Show success message
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProfileSaving(false);
+    }
+  };
+
+  // Handle profile field changes
+  const handleProfileChange = (field: string, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const userTracks = getUserTracks ? getUserTracks(user?.id || 'guest') : [];
 
@@ -367,46 +429,95 @@ const Dashboard = () => {
           <div className="flex items-center space-x-4">
             <Avatar className="w-20 h-20">
               <AvatarFallback className="text-2xl">
-                {user?.name?.charAt(0) || 'U'}
+                {profileData.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             <div>
               <Button variant="outline" size="sm">
                 Change Avatar
               </Button>
+              <p className="text-xs text-muted-foreground mt-1">Upload a new avatar image</p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Artist Name</label>
-              <Input defaultValue={user?.name || ''} className="mt-1" />
+              <label className="text-sm font-medium">Artist Name *</label>
+              <Input 
+                value={profileData.name} 
+                onChange={(e) => handleProfileChange('name', e.target.value)}
+                className="mt-1" 
+                placeholder="Enter your artist name"
+              />
             </div>
             <div>
-              <label className="text-sm font-medium">Email</label>
-              <Input defaultValue={user?.email || ''} className="mt-1" />
+              <label className="text-sm font-medium">Email *</label>
+              <Input 
+                value={profileData.email} 
+                onChange={(e) => handleProfileChange('email', e.target.value)}
+                className="mt-1"
+                type="email"
+                placeholder="your@email.com"
+              />
             </div>
             <div>
               <label className="text-sm font-medium">Country</label>
-              <Input placeholder="United States" className="mt-1" />
+              <Input 
+                value={profileData.country}
+                onChange={(e) => handleProfileChange('country', e.target.value)}
+                placeholder="United States" 
+                className="mt-1" 
+              />
             </div>
             <div>
               <label className="text-sm font-medium">Primary Genre</label>
-              <Input placeholder="Pop" className="mt-1" />
+              <Input 
+                value={profileData.genre}
+                onChange={(e) => handleProfileChange('genre', e.target.value)}
+                placeholder="Pop, Hip Hop, Rock, etc." 
+                className="mt-1" 
+              />
             </div>
           </div>
 
           <div>
             <label className="text-sm font-medium">Bio</label>
-            <textarea 
-              className="w-full mt-1 p-2 border rounded-md"
+            <Textarea 
+              value={profileData.bio}
+              onChange={(e) => handleProfileChange('bio', e.target.value)}
+              className="mt-1"
               rows={4}
-              placeholder="Tell us about yourself..."
+              placeholder="Tell us about yourself, your music style, influences, and what makes you unique..."
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {profileData.bio.length}/500 characters
+            </p>
           </div>
 
-          <div className="pt-4">
-            <Button>Save Changes</Button>
+          <div className="pt-4 flex gap-3">
+            <Button 
+              onClick={handleSaveProfile}
+              disabled={isProfileSaving || !profileData.name || !profileData.email}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isProfileSaving ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                const savedProfile = localStorage.getItem('userProfile');
+                if (savedProfile) {
+                  setProfileData(JSON.parse(savedProfile));
+                }
+                toast({
+                  title: "Changes Discarded",
+                  description: "Your unsaved changes have been reverted.",
+                });
+              }}
+            >
+              Reset
+            </Button>
           </div>
         </CardContent>
       </Card>
