@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Users,
   Crown,
@@ -18,8 +21,35 @@ import {
   TrendingUp,
   Calendar,
   Download,
-  Upload
+  Upload,
+  UserPlus,
+  Shield,
+  Mail,
+  Eye,
+  EyeOff,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquare,
+  Server,
+  Database
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin' | 'support' | 'owner';
+  status: 'active' | 'inactive' | 'suspended';
+  joinDate: string;
+  lastActive: string;
+  totalTracks?: number;
+  totalStreams?: number;
+  totalRevenue?: number;
+  avatar?: string;
+}
 
 interface PlatformStats {
   totalUsers: number;
@@ -29,6 +59,11 @@ interface PlatformStats {
   activeTracks: number;
   totalStreams: number;
   platformGrowth: number;
+  activeSessions: number;
+  supportTickets: number;
+  pendingReleases: number;
+  serverUptime: number;
+  storageUsed: number;
 }
 
 interface RevenueData {
@@ -45,7 +80,12 @@ const mockPlatformStats: PlatformStats = {
   monthlyRevenue: 28540.32,
   activeTracks: 78921,
   totalStreams: 15234567,
-  platformGrowth: 12.5
+  platformGrowth: 12.5,
+  activeSessions: 1543,
+  supportTickets: 23,
+  pendingReleases: 45,
+  serverUptime: 99.9,
+  storageUsed: 75.2
 };
 
 const mockRevenueData: RevenueData[] = [
@@ -63,6 +103,7 @@ const mockUsers: User[] = [
     role: 'user',
     status: 'active',
     joinDate: '2024-01-15',
+    lastActive: '2 hours ago',
     totalTracks: 12,
     totalStreams: 50000,
     totalRevenue: 485.50
@@ -74,6 +115,7 @@ const mockUsers: User[] = [
     role: 'admin',
     status: 'active',
     joinDate: '2024-02-20',
+    lastActive: '1 day ago',
     totalTracks: 8,
     totalStreams: 25000,
     totalRevenue: 245.75
@@ -85,9 +127,28 @@ const mockUsers: User[] = [
     role: 'user',
     status: 'inactive',
     joinDate: '2024-03-10',
+    lastActive: '1 week ago',
     totalTracks: 5,
     totalStreams: 12000,
     totalRevenue: 125.20
+  },
+  {
+    id: '4',
+    name: 'Emily Admin',
+    email: 'emily@tunetracks.com',
+    role: 'admin',
+    status: 'active',
+    joinDate: '2023-12-01',
+    lastActive: '30 minutes ago'
+  },
+  {
+    id: '5',
+    name: 'Support Agent',
+    email: 'support@tunetracks.com',
+    role: 'support',
+    status: 'active',
+    joinDate: '2024-01-01',
+    lastActive: '15 minutes ago'
   }
 ];
 
@@ -99,9 +160,10 @@ const OwnerDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('overview');
   const { toast } = useToast();
 
-  const stats = mockSystemStats;
+  const stats = mockPlatformStats;
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
@@ -231,7 +293,7 @@ const OwnerDashboard: React.FC = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Owner Dashboard
               </h1>
-              <p className="text-gray-600 mt-1">Manage users, roles, and system settings</p>
+              <p className="text-gray-600 mt-1">Complete platform management and business analytics</p>
             </div>
           </div>
           <Badge variant="outline" className="bg-purple-50 border-purple-200 text-purple-700">
@@ -306,32 +368,139 @@ const OwnerDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-indigo-100 text-sm">Pending Releases</p>
-                  <p className="text-2xl font-bold">{stats.pendingReleases}</p>
+                  <p className="text-indigo-100 text-sm">Server Uptime</p>
+                  <p className="text-2xl font-bold">{stats.serverUptime}%</p>
                 </div>
-                <Globe className="h-8 w-8 text-indigo-200" />
+                <Server className="h-8 w-8 text-indigo-200" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
-            <TabsTrigger value="settings">System Settings</TabsTrigger>
-          </TabsList>
+        {/* Navigation Tabs */}
+        <div className="flex space-x-2 mb-8 bg-white p-2 rounded-lg border">
+          <Button 
+            variant={activeTab === "overview" ? "default" : "ghost"}
+            onClick={() => setActiveTab("overview")}
+            className="flex items-center"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Overview
+          </Button>
+          <Button 
+            variant={activeTab === "users" ? "default" : "ghost"}
+            onClick={() => setActiveTab("users")}
+            className="flex items-center"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            User Management
+          </Button>
+          <Button 
+            variant={activeTab === "analytics" ? "default" : "ghost"}
+            onClick={() => setActiveTab("analytics")}
+            className="flex items-center"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Business Analytics
+          </Button>
+          <Button 
+            variant={activeTab === "system" ? "default" : "ghost"}
+            onClick={() => setActiveTab("system")}
+            className="flex items-center"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            System Settings
+          </Button>
+        </div>
 
-          <TabsContent value="users" className="space-y-6">
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Health</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Server Uptime</span>
+                    <span className="text-green-600 font-bold">{stats.serverUptime}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Storage Used</span>
+                    <span className="text-blue-600 font-bold">{stats.storageUsed}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Active Sessions</span>
+                    <span className="text-purple-600 font-bold">{stats.activeSessions.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Platform Growth</span>
+                    <span className="text-green-600 font-bold">+{stats.platformGrowth}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {mockRevenueData.map((platform) => (
+                    <div key={platform.platform} className="flex justify-between items-center">
+                      <span className="text-sm">{platform.platform}</span>
+                      <div className="text-right">
+                        <div className="font-bold">${platform.revenue.toFixed(0)}</div>
+                        <div className="text-xs text-green-600">+{platform.growth}%</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center text-blue-600">
+                    <Users className="w-4 h-4 mr-2" />
+                    15 new users registered today
+                  </div>
+                  <div className="flex items-center text-green-600">
+                    <Music className="w-4 h-4 mr-2" />
+                    23 tracks uploaded today
+                  </div>
+                  <div className="flex items-center text-purple-600">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    $1,234 revenue generated today
+                  </div>
+                  <div className="flex items-center text-orange-600">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    3 new support tickets
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* User Management Tab */}
+        {activeTab === "users" && (
+          <div className="space-y-6">
             {/* Add User Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <UserPlus className="w-5 h-5 mr-2" />
-                  Add New User
+                  Add New Team Member
                 </CardTitle>
                 <CardDescription>
-                  Add team members with specific roles and permissions
+                  Add administrators, support agents, or grant special access
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -381,9 +550,9 @@ const OwnerDashboard: React.FC = () => {
             {/* User List */}
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
+                <CardTitle>Team & User Management</CardTitle>
                 <CardDescription>
-                  Manage all users in the system
+                  Manage all platform users and team members
                 </CardDescription>
                 
                 {/* Filters */}
@@ -450,6 +619,9 @@ const OwnerDashboard: React.FC = () => {
                             </span>
                             <span>Joined: {user.joinDate}</span>
                             <span>Last active: {user.lastActive}</span>
+                            {user.totalRevenue && (
+                              <span className="text-green-600">${user.totalRevenue.toFixed(2)} earned</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -491,163 +663,220 @@ const OwnerDashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="roles" className="space-y-6">
+        {/* Business Analytics Tab */}
+        {activeTab === "analytics" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="w-5 h-5 mr-2" />
-                  Roles & Permissions
-                </CardTitle>
-                <CardDescription>
-                  Configure role permissions and access levels
-                </CardDescription>
+                <CardTitle>Revenue Analytics</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Owner Role */}
-                  <div className="p-4 border rounded-lg bg-purple-50 border-purple-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <Crown className="w-5 h-5 text-purple-600" />
-                        <h3 className="font-semibold text-gray-900">Owner</h3>
-                        <Badge className={getRoleColor('owner')}>Highest Level</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">Full system access and control</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <span className="text-green-600">✓ User Management</span>
-                      <span className="text-green-600">✓ Role Assignment</span>
-                      <span className="text-green-600">✓ System Settings</span>
-                      <span className="text-green-600">✓ Financial Access</span>
-                      <span className="text-green-600">✓ Admin Controls</span>
-                      <span className="text-green-600">✓ Support Management</span>
-                      <span className="text-green-600">✓ Content Moderation</span>
-                      <span className="text-green-600">✓ Platform Analytics</span>
-                    </div>
+                  <div className="flex justify-between items-center pb-4 border-b">
+                    <span className="font-medium">Total Revenue</span>
+                    <span className="text-2xl font-bold text-green-600">${stats.totalRevenue.toLocaleString()}</span>
                   </div>
-
-                  {/* Admin Role */}
-                  <div className="p-4 border rounded-lg bg-red-50 border-red-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <Settings className="w-5 h-5 text-red-600" />
-                        <h3 className="font-semibold text-gray-900">Administrator</h3>
-                        <Badge className={getRoleColor('admin')}>High Level</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">System administration and user management</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <span className="text-green-600">✓ Content Moderation</span>
-                      <span className="text-green-600">✓ User Support</span>
-                      <span className="text-green-600">✓ Release Management</span>
-                      <span className="text-green-600">✓ Basic Analytics</span>
-                      <span className="text-red-600">✗ User Creation</span>
-                      <span className="text-red-600">✗ Role Changes</span>
-                      <span className="text-red-600">✗ System Settings</span>
-                      <span className="text-red-600">✗ Financial Access</span>
-                    </div>
+                  <div className="flex justify-between items-center pb-4 border-b">
+                    <span className="font-medium">Monthly Revenue</span>
+                    <span className="text-2xl font-bold text-blue-600">${stats.monthlyRevenue.toLocaleString()}</span>
                   </div>
-
-                  {/* Support Role */}
-                  <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <MessageSquare className="w-5 h-5 text-blue-600" />
-                        <h3 className="font-semibold text-gray-900">Support Agent</h3>
-                        <Badge className={getRoleColor('support')}>Medium Level</Badge>
+                  <div>
+                    <h4 className="font-medium mb-4">Platform Distribution</h4>
+                    {mockRevenueData.map((platform) => (
+                      <div key={platform.platform} className="flex justify-between items-center mb-3">
+                        <span>{platform.platform}</span>
+                        <div className="text-right">
+                          <div className="font-bold">${platform.revenue.toLocaleString()}</div>
+                          <div className="text-sm text-gray-500">{platform.percentage}%</div>
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">Customer support and assistance</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <span className="text-green-600">✓ Live Chat</span>
-                      <span className="text-green-600">✓ Ticket Management</span>
-                      <span className="text-green-600">✓ User Assistance</span>
-                      <span className="text-green-600">✓ Basic User Info</span>
-                      <span className="text-red-600">✗ Content Moderation</span>
-                      <span className="text-red-600">✗ Release Management</span>
-                      <span className="text-red-600">✗ User Management</span>
-                      <span className="text-red-600">✗ System Access</span>
-                    </div>
-                  </div>
-
-                  {/* User Role */}
-                  <div className="p-4 border rounded-lg bg-green-50 border-green-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <Users className="w-5 h-5 text-green-600" />
-                        <h3 className="font-semibold text-gray-900">User</h3>
-                        <Badge className={getRoleColor('user')}>Basic Level</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">Standard user with music distribution access</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <span className="text-green-600">✓ Music Upload</span>
-                      <span className="text-green-600">✓ Track Management</span>
-                      <span className="text-green-600">✓ Analytics View</span>
-                      <span className="text-green-600">✓ Earnings Tracking</span>
-                      <span className="text-red-600">✗ Admin Access</span>
-                      <span className="text-red-600">✗ User Management</span>
-                      <span className="text-red-600">✗ System Settings</span>
-                      <span className="text-red-600">✗ Support Tools</span>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Total Streams</span>
+                    <span className="font-bold">{stats.totalStreams.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Active Tracks</span>
+                    <span className="font-bold">{stats.activeTracks.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Platform Growth</span>
+                    <span className="font-bold text-green-600">+{stats.platformGrowth}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>User Retention</span>
+                    <span className="font-bold text-blue-600">87.5%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Avg. Revenue per User</span>
+                    <span className="font-bold">${(stats.totalRevenue / stats.totalUsers).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Support Satisfaction</span>
+                    <span className="font-bold text-green-600">94.2%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>System Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">{stats.serverUptime}%</div>
+                    <div className="text-sm text-gray-500">Server Uptime</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600">{stats.storageUsed}%</div>
+                    <div className="text-sm text-gray-500">Storage Used</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-600">{stats.activeSessions}</div>
+                    <div className="text-sm text-gray-500">Active Sessions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-600">{stats.supportTickets}</div>
+                    <div className="text-sm text-gray-500">Open Tickets</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* System Settings Tab */}
+        {activeTab === "system" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Settings className="w-5 h-5 mr-2" />
-                  System Settings
+                  Platform Configuration
                 </CardTitle>
-                <CardDescription>
-                  Configure platform-wide settings and preferences
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Platform Configuration</h3>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <p>• User registration settings</p>
-                      <p>• Upload limits and restrictions</p>
-                      <p>• Payment processing configuration</p>
-                      <p>• Email notification settings</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="mt-3">Configure Platform</Button>
+                    <h3 className="font-medium mb-2">User Registration</h3>
+                    <p className="text-sm text-gray-600 mb-3">Control new user registration settings</p>
+                    <Button variant="outline" size="sm">Configure</Button>
                   </div>
-
                   <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Security Settings</h3>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <p>• Two-factor authentication</p>
-                      <p>• Session management</p>
-                      <p>• API access control</p>
-                      <p>• Account security policies</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="mt-3">Manage Security</Button>
+                    <h3 className="font-medium mb-2">Upload Limits</h3>
+                    <p className="text-sm text-gray-600 mb-3">Set file size and format restrictions</p>
+                    <Button variant="outline" size="sm">Manage Limits</Button>
                   </div>
-
                   <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Integration Settings</h3>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <p>• Streaming platform APIs</p>
-                      <p>• Payment gateway configuration</p>
-                      <p>• Analytics tracking</p>
-                      <p>• Third-party services</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="mt-3">Configure Integrations</Button>
+                    <h3 className="font-medium mb-2">Payment Processing</h3>
+                    <p className="text-sm text-gray-600 mb-3">Configure payment gateways and fees</p>
+                    <Button variant="outline" size="sm">Setup Payments</Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="w-5 h-5 mr-2" />
+                  Security & Compliance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Two-Factor Authentication</h3>
+                    <p className="text-sm text-gray-600 mb-3">Enforce 2FA for admin accounts</p>
+                    <Button variant="outline" size="sm">Enable 2FA</Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Session Management</h3>
+                    <p className="text-sm text-gray-600 mb-3">Control user session timeouts</p>
+                    <Button variant="outline" size="sm">Configure Sessions</Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">API Access Control</h3>
+                    <p className="text-sm text-gray-600 mb-3">Manage API keys and rate limits</p>
+                    <Button variant="outline" size="sm">Manage APIs</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="w-5 h-5 mr-2" />
+                  Platform Integrations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Streaming Platforms</h3>
+                    <p className="text-sm text-gray-600 mb-3">Configure distribution APIs</p>
+                    <Button variant="outline" size="sm">Manage Platforms</Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Analytics Tracking</h3>
+                    <p className="text-sm text-gray-600 mb-3">Setup analytics and reporting</p>
+                    <Button variant="outline" size="sm">Configure Analytics</Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Third-Party Services</h3>
+                    <p className="text-sm text-gray-600 mb-3">Integrate external services</p>
+                    <Button variant="outline" size="sm">Manage Services</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Database className="w-5 h-5 mr-2" />
+                  System Maintenance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Database Backup</h3>
+                    <p className="text-sm text-gray-600 mb-3">Schedule automated backups</p>
+                    <Button variant="outline" size="sm">Configure Backups</Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">Server Monitoring</h3>
+                    <p className="text-sm text-gray-600 mb-3">Monitor server performance</p>
+                    <Button variant="outline" size="sm">View Monitoring</Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-medium mb-2">System Updates</h3>
+                    <p className="text-sm text-gray-600 mb-3">Manage platform updates</p>
+                    <Button variant="outline" size="sm">Check Updates</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

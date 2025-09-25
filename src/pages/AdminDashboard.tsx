@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   CheckCircle, 
   XCircle, 
@@ -21,15 +24,16 @@ import {
   Flag,
   Shield,
   Settings,
-  Filter,
   Search,
   Calendar,
   ArrowLeft,
-  MessageCircle
+  MessageCircle,
+  UserCheck,
+  UserX,
+  FileText,
+  BarChart3
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTracksContext } from "@/contexts/TracksContext";
 
 interface AdminRelease {
@@ -54,12 +58,72 @@ interface AdminRelease {
   submissionNotes?: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin' | 'owner';
+  status: 'active' | 'inactive' | 'suspended';
+  joinDate: string;
+  lastActive: string;
+  totalTracks: number;
+  totalStreams: number;
+  totalRevenue: number;
+}
+
 const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState("tracks");
   const [filter, setFilter] = useState<string>("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [rejectReason, setRejectReason] = useState("");
+  const [selectedTrackForReject, setSelectedTrackForReject] = useState<string | null>(null);
   const { toast } = useToast();
   const { tracks, updateTrack } = useTracksContext();
+
+  // Mock users data
+  useEffect(() => {
+    const mockUsers: User[] = [
+      {
+        id: '1',
+        name: 'John Artist',
+        email: 'john@example.com',
+        role: 'user',
+        status: 'active',
+        joinDate: '2024-01-15',
+        lastActive: '2 hours ago',
+        totalTracks: 12,
+        totalStreams: 50000,
+        totalRevenue: 485.50
+      },
+      {
+        id: '2',
+        name: 'Sarah Producer',
+        email: 'sarah@example.com',
+        role: 'user',
+        status: 'active',
+        joinDate: '2024-02-20',
+        lastActive: '1 day ago',
+        totalTracks: 8,
+        totalStreams: 25000,
+        totalRevenue: 245.75
+      },
+      {
+        id: '3',
+        name: 'Mike Composer',
+        email: 'mike@example.com',
+        role: 'user',
+        status: 'inactive',
+        joinDate: '2024-03-10',
+        lastActive: '1 week ago',
+        totalTracks: 5,
+        totalStreams: 12000,
+        totalRevenue: 125.20
+      }
+    ];
+    setUsers(mockUsers);
+  }, []);
 
   // Convert tracks from context to admin format
   const adminReleases: AdminRelease[] = tracks.map(track => ({
@@ -100,7 +164,11 @@ const AdminDashboard = () => {
     totalRejected: adminReleases.filter(r => r.status === "rejected").length,
     totalToday: adminReleases.filter(r => 
       new Date(r.uploadDate).toDateString() === new Date().toDateString()
-    ).length
+    ).length,
+    totalUsers: users.length,
+    activeUsers: users.filter(u => u.status === 'active').length,
+    suspendedUsers: users.filter(u => u.status === 'suspended').length,
+    totalRevenue: users.reduce((sum, user) => sum + user.totalRevenue, 0)
   };
 
   const handleApprove = (releaseId: string) => {
@@ -111,12 +179,35 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleReject = (releaseId: string) => {
+  const handleReject = (releaseId: string, reason?: string) => {
     updateTrack(releaseId, { status: "rejected" });
     toast({
       title: "Release Rejected",
-      description: "The release has been rejected and the artist will be notified.",
+      description: reason ? `Rejected: ${reason}` : "The release has been rejected and the artist will be notified.",
       variant: "destructive"
+    });
+    setSelectedTrackForReject(null);
+    setRejectReason("");
+  };
+
+  const handleSuspendUser = (userId: string) => {
+    setUsers(prev => prev.map(user => 
+      user.id === userId ? { ...user, status: 'suspended' as const } : user
+    ));
+    toast({
+      title: "User Suspended",
+      description: "User account has been suspended.",
+      variant: "destructive"
+    });
+  };
+
+  const handleActivateUser = (userId: string) => {
+    setUsers(prev => prev.map(user => 
+      user.id === userId ? { ...user, status: 'active' as const } : user
+    ));
+    toast({
+      title: "User Activated",
+      description: "User account has been activated.",
     });
   };
 
@@ -209,7 +300,7 @@ const AdminDashboard = () => {
       {/* Admin Content */}
       <div className="container mx-auto px-6 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -234,200 +325,397 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-red-100">Rejected</p>
-                  <p className="text-2xl font-bold">{stats.totalRejected}</p>
-                </div>
-                <XCircle className="h-8 w-8 text-red-200" />
-              </div>
-            </CardContent>
-          </Card>
-
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100">Today's Submissions</p>
-                  <p className="text-2xl font-bold">{stats.totalToday}</p>
+                  <p className="text-blue-100">Total Users</p>
+                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
                 </div>
-                <Calendar className="h-8 w-8 text-blue-200" />
+                <Users className="h-8 w-8 text-blue-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100">Revenue</p>
+                  <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(0)}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-purple-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-red-100">Suspended</p>
+                  <p className="text-2xl font-bold">{stats.suspendedUsers}</p>
+                </div>
+                <Shield className="h-8 w-8 text-red-200" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters and Search */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Music className="w-5 h-5 mr-2" />
-              Release Management
-            </CardTitle>
-            <CardDescription>Review, approve, reject, or takedown music releases</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search by title, artist, or genre..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending Review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="all">All Releases</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Administration</h2>
+              <p className="text-gray-600">Manage content, users, and platform operations</p>
             </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant={activeTab === "tracks" ? "default" : "outline"}
+                onClick={() => setActiveTab("tracks")}
+                className="flex items-center"
+              >
+                <Music className="w-4 h-4 mr-2" />
+                Track Management
+              </Button>
+              <Button 
+                variant={activeTab === "users" ? "default" : "outline"}
+                onClick={() => setActiveTab("users")}
+                className="flex items-center"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                User Management
+              </Button>
+              <Button 
+                variant={activeTab === "analytics" ? "default" : "outline"}
+                onClick={() => setActiveTab("analytics")}
+                className="flex items-center"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </Button>
+            </div>
+          </div>
 
-            {/* Releases List */}
-            <div className="space-y-4">
-              {filteredReleases.map((release) => (
-                <Card key={release.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        {/* Play Button */}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => togglePlay(release.id)}
-                          className="mt-1"
-                        >
-                          {playingTrack === release.id ? (
-                            <Pause className="w-4 h-4" />
-                          ) : (
-                            <Play className="w-4 h-4" />
-                          )}
-                        </Button>
+          {/* Track Management Tab */}
+          {activeTab === "tracks" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Music className="w-5 h-5 mr-2" />
+                  Release Management
+                </CardTitle>
+                <CardDescription>Review, approve, reject, or takedown music releases</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search by title, artist, or genre..."
+                      className="pl-10"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Select value={filter} onValueChange={setFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending Review</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="all">All Releases</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                        {/* Release Info */}
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {release.title}
-                            </h3>
-                            <Badge className={getStatusColor(release.status)}>
-                              {getStatusIcon(release.status)}
-                              <span className="ml-1 capitalize">{release.status}</span>
+                {/* Releases List */}
+                <div className="space-y-4">
+                  {filteredReleases.map((release) => (
+                    <Card key={release.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-4 flex-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => togglePlay(release.id)}
+                              className="mt-1"
+                            >
+                              {playingTrack === release.id ? (
+                                <Pause className="w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4" />
+                              )}
+                            </Button>
+
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {release.title}
+                                </h3>
+                                <Badge className={getStatusColor(release.status)}>
+                                  {getStatusIcon(release.status)}
+                                  <span className="ml-1 capitalize">{release.status}</span>
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
+                                <div>
+                                  <span className="font-medium">Artist:</span> {release.artist}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Genre:</span> {release.genre}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Duration:</span> {release.duration}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Uploaded:</span> {formatDate(release.uploadDate)}
+                                </div>
+                              </div>
+
+                              {release.submissionNotes && (
+                                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                  <p className="text-sm text-gray-700">
+                                    <span className="font-medium">Notes:</span> {release.submissionNotes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2 ml-4">
+                            <Button variant="outline" size="icon">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline" size="icon">
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            
+                            {release.status === "pending" && (
+                              <>
+                                <Button 
+                                  onClick={() => handleApprove(release.id)}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  size="sm"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button 
+                                  onClick={() => setSelectedTrackForReject(release.id)}
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            
+                            {release.status === "live" && (
+                              <Button 
+                                onClick={() => handleTakedown(release.id)}
+                                variant="destructive"
+                                size="sm"
+                              >
+                                <Flag className="w-4 h-4 mr-1" />
+                                Takedown
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {filteredReleases.length === 0 && (
+                    <div className="text-center py-12">
+                      <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No releases found
+                      </h3>
+                      <p className="text-gray-600">
+                        {searchQuery ? "Try adjusting your search terms" : "No releases match the current filter"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* User Management Tab */}
+          {activeTab === "users" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  User Management
+                </CardTitle>
+                <CardDescription>Manage user accounts and permissions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                            {user.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-medium text-gray-900">{user.name}</h3>
+                            <Badge variant={user.status === 'active' ? 'default' : user.status === 'suspended' ? 'destructive' : 'secondary'}>
+                              {user.status}
                             </Badge>
                           </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                            <div>
-                              <span className="font-medium">Artist:</span> {release.artist}
-                            </div>
-                            <div>
-                              <span className="font-medium">Genre:</span> {release.genre}
-                            </div>
-                            <div>
-                              <span className="font-medium">Duration:</span> {release.duration}
-                            </div>
-                            <div>
-                              <span className="font-medium">Uploaded:</span> {formatDate(release.uploadDate)}
-                            </div>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                            <span>{user.email}</span>
+                            <span>{user.totalTracks} tracks</span>
+                            <span>${user.totalRevenue.toFixed(2)} earned</span>
+                            <span>Last active: {user.lastActive}</span>
                           </div>
-
-                          {release.album && (
-                            <div className="text-sm text-gray-600 mt-1">
-                              <span className="font-medium">Album:</span> {release.album}
-                            </div>
-                          )}
-
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                            {release.metadata.explicit && (
-                              <Badge variant="outline" className="text-red-600 border-red-200">
-                                Explicit
-                              </Badge>
-                            )}
-                            {release.metadata.isrc && (
-                              <span>ISRC: {release.metadata.isrc}</span>
-                            )}
-                            <span>{release.metadata.copyright}</span>
-                          </div>
-
-                          {release.submissionNotes && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                              <p className="text-sm text-gray-700">
-                                <span className="font-medium">Submission Notes:</span> {release.submissionNotes}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Button variant="outline" size="icon">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="icon">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        
-                        {release.status === "pending" && (
-                          <>
-                            <Button 
-                              onClick={() => handleApprove(release.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              size="sm"
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button 
-                              onClick={() => handleReject(release.id)}
-                              variant="destructive"
-                              size="sm"
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        
-                        {release.status === "approved" && (
-                          <Button 
-                            onClick={() => handleTakedown(release.id)}
-                            variant="destructive"
+                      <div className="flex items-center space-x-2">
+                        {user.status === 'active' ? (
+                          <Button
+                            variant="outline"
                             size="sm"
+                            onClick={() => handleSuspendUser(user.id)}
+                            className="text-red-600"
                           >
-                            <Flag className="w-4 h-4 mr-1" />
-                            Takedown
+                            <UserX className="w-4 h-4 mr-2" />
+                            Suspend
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleActivateUser(user.id)}
+                            className="text-green-600"
+                          >
+                            <UserCheck className="w-4 h-4 mr-2" />
+                            Activate
                           </Button>
                         )}
+                        <Button variant="outline" size="sm">
+                          <Eye className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {filteredReleases.length === 0 && (
-                <div className="text-center py-12">
-                  <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No releases found
-                  </h3>
-                  <p className="text-gray-600">
-                    {searchQuery ? "Try adjusting your search terms" : "No releases match the current filter"}
-                  </p>
+                  ))}
                 </div>
-              )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Total Revenue</span>
+                      <span className="font-bold">${stats.totalRevenue.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Active Users</span>
+                      <span className="font-bold">{stats.activeUsers}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Releases</span>
+                      <span className="font-bold">{adminReleases.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Approval Rate</span>
+                      <span className="font-bold">{((stats.totalApproved / Math.max(adminReleases.length, 1)) * 100).toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center text-green-600">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      3 releases approved today
+                    </div>
+                    <div className="flex items-center text-red-600">
+                      <XCircle className="w-4 h-4 mr-2" />
+                      1 release rejected today
+                    </div>
+                    <div className="flex items-center text-blue-600">
+                      <Users className="w-4 h-4 mr-2" />
+                      2 new users registered today
+                    </div>
+                    <div className="flex items-center text-yellow-600">
+                      <Clock className="w-4 h-4 mr-2" />
+                      {stats.totalPending} releases awaiting review
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </Tabs>
+
+        {/* Reject Modal */}
+        {selectedTrackForReject && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Reject Release</CardTitle>
+                <CardDescription>Please provide a reason for rejection</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Enter rejection reason..."
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    rows={4}
+                  />
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => handleReject(selectedTrackForReject, rejectReason)}
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      Reject Release
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSelectedTrackForReject(null);
+                        setRejectReason("");
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
