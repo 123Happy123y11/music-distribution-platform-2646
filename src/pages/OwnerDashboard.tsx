@@ -55,6 +55,42 @@ const mockRevenueData: RevenueData[] = [
   { platform: 'Amazon Music', revenue: 27789.56, percentage: 11.9, growth: 5.4 }
 ];
 
+const mockUsers: User[] = [
+  {
+    id: '1',
+    name: 'John Artist',
+    email: 'john@example.com',
+    role: 'user',
+    status: 'active',
+    joinDate: '2024-01-15',
+    totalTracks: 12,
+    totalStreams: 50000,
+    totalRevenue: 485.50
+  },
+  {
+    id: '2',
+    name: 'Sarah Producer',
+    email: 'sarah@example.com',
+    role: 'admin',
+    status: 'active',
+    joinDate: '2024-02-20',
+    totalTracks: 8,
+    totalStreams: 25000,
+    totalRevenue: 245.75
+  },
+  {
+    id: '3',
+    name: 'Mike Composer',
+    email: 'mike@example.com',
+    role: 'user',
+    status: 'inactive',
+    joinDate: '2024-03-10',
+    totalTracks: 5,
+    totalStreams: 12000,
+    totalRevenue: 125.20
+  }
+];
+
 const OwnerDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [newUserEmail, setNewUserEmail] = useState('');
